@@ -1,1 +1,30 @@
+# 1) Python Virtual Environment
 finsightvenv/
+
+
+
+Update .gitignore to add these rules:
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Model artifacts (large files, not for git)
+notebooks/models/xgboost/*.pkl
+notebooks/models/lightgbm/*.pkl
+notebooks/models/random_forest/*.pkl
+backend/artifacts/
+
+# Raw data (fetched dynamically)
+backend/data/raw/
+
+# EDA outputs (generated on the fly)
+backend/eda/outputs/
+
+# Environment
+finsightvenv/
+*.env
