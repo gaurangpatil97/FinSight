@@ -1,0 +1,16 @@
+[
+  "Open",
+  "High",
+  "Low",
+  "Close",
+  "Volume",
+  "Adj Close",
+  "daily_return",
+  "log_return",
+  "hl_spread",
+  "Close_lag_1",
+  "Close_lag_5",
+  "Close_lag_10",
+  "rolling_mean_20",
+  "rolling_std_20"
+]
