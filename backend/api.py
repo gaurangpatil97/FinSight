@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
@@ -32,9 +33,10 @@ APP = FastAPI(title="FinSight API")
 APP.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 # Configuration
-ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
-EDA_OUTPUTS_DIR = Path(__file__).resolve().parent / "eda" / "outputs"
-NOTEBOOKS_DIR = Path(__file__).resolve().parents[1] / "notebooks" / "models"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARTIFACTS_DIR = Path(BASE_DIR) / "artifacts"
+EDA_OUTPUTS_DIR = Path(BASE_DIR) / "eda" / "outputs"
+NOTEBOOKS_DIR = Path(os.path.dirname(BASE_DIR)) / "notebooks" / "models"
 DEFAULT_TICKERS = ["RELIANCE.NS", "HDFCBANK.NS", "SBIN.NS"]
 
 
@@ -184,7 +186,8 @@ def models_metrics(ticker: str):
                 continue
 
             X_recent = X_scaled.iloc[-30:]
-            y_true = engineered[preprocessor.target_column].reindex(X_recent.index).astype(float).values
+            y_true_raw = df["Close"].reindex(X_recent.index).astype(float).values
+            y_true = y_true_raw
 
             # Some model objects expect 2D numpy arrays
             try:
@@ -253,22 +256,37 @@ def models_metrics(ticker: str):
 @APP.get("/forecast/{ticker}/{model_name}")
 def forecast_html(ticker: str, model_name: str):
     if ticker not in DEFAULT_TICKERS:
-        raise HTTPException(status_code=404, detail="Ticker not supported") 
-    artifacts_dir = _model_artifact_dir(ticker)
-    # try to find a forecast HTML matching the model name inside artifacts
-    if artifacts_dir.exists():
-        for p in artifacts_dir.glob("**/*.html"):
-            if model_name.lower() in p.name.lower():
-                return {"forecast_html": str(p)}
+        raise HTTPException(status_code=404, detail="Ticker not supported")
 
-    # fallback: search notebooks models folder for a forecast HTML for this model
     safe = _safe_ticker(ticker)
-    notebooks_search_dir = NOTEBOOKS_DIR / model_name
-    if notebooks_search_dir.exists():
-        pattern = f"*{safe}*forecast*.html"
-        for p in notebooks_search_dir.glob(pattern):
-            if p.is_file():
-                return {"forecast_html": str(p)}
+    artifacts_dir = _model_artifact_dir(ticker)
+
+    # Map model names to their forecast HTML filename patterns
+    forecast_patterns = {
+        "xgboost": f"{safe}_xgboost_forecast.html",
+        "lightgbm": f"{safe}_lgbm_forecast.html",
+        "random_forest": f"{safe}_rf_forecast.html",
+    }
+
+    if model_name not in forecast_patterns:
+        raise HTTPException(status_code=404, detail=f"Unknown model: {model_name}")
+
+    filename = forecast_patterns[model_name]
+
+    # Check artifacts folder first
+    artifact_path = artifacts_dir / filename
+    if artifact_path.exists():
+        return {"forecast_html": str(artifact_path)}
+
+    # Fallback: check notebooks folder
+    model_folder_map = {
+        "xgboost": "xgboost",
+        "lightgbm": "lightgbm",
+        "random_forest": "random_forest",
+    }
+    notebook_path = NOTEBOOKS_DIR / model_folder_map[model_name] / filename
+    if notebook_path.exists():
+        return {"forecast_html": str(notebook_path)}
 
     return {"forecast_html": None}
 

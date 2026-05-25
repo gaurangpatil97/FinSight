@@ -36,8 +36,6 @@ export default function ModelsPage() {
       // Auto-select best model on initial load
       if (metricsData.best_model) {
         setSelectedModel(metricsData.best_model as ModelKey);
-      } else {
-        setSelectedModel("xgboost");
       }
     } catch (err: any) {
       console.error("Failed to load models data:", err);
@@ -268,6 +266,7 @@ export default function ModelsPage() {
           ) : forecastPath ? (
             <div className="relative w-full h-[550px] border border-gray-100 rounded-lg overflow-hidden bg-gray-50 shadow-inner">
               <iframe
+                key={selectedModel}
                 src={`/api/eda-html?path=${encodeURIComponent(forecastPath)}`}
                 title={`${selectedModel} forecast plot`}
                 className="absolute inset-0 w-full h-full border-none"
