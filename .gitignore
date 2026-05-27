@@ -69,3 +69,10 @@ notebooks/outputs/
 
 # Alternate virtualenv names
 .venv/
+
+
+
+# Unprefixed notebook outputs (SBIN run artifacts)
+notebooks/models/xgboost/xgboost_best_params.json
+notebooks/models/xgboost/xgboost_experiment.ipynb
+notebooks/models/xgboost/feature_columns.json
